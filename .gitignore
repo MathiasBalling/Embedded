@@ -1,0 +1,8 @@
+build/
+Debug/
+.DS_Store
+.settings
+.ccsproject
+.cproject
+.project
+
