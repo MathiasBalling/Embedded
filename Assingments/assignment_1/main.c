@@ -1,20 +1,23 @@
 #include "tm4c123gh6pm.h"
 #include <stdbool.h>
 #include <stdint.h>
-#define SYSTICK_RELOAD_VALUE 16000 // 1 mS
+#define SYSTICK_RELOAD_VALUE 16000 // SysTick interrupt every 1ms
 
 // Missing definitions in tm4c123gh6pm.h file
 #define NVIC_INT_CTRL_PEND_SYST 0x04000000   // Pend a systick int
 #define NVIC_INT_CTRL_UNPEND_SYST 0x02000000 // Unpend a systick int
 
+// Priority of the systick interrupt
 #define SYSTICK_PRIORITY 0x7E
 
-volatile int ticks = 0;
-
-void SysTick_Handler(void) {
-  // Hardware clears systick int reguest
-  ticks++;
-}
+// Timeout for double click
+int doubleClickTimeout = 100;
+// Timeout for long press
+int longPressTimeout = 2000;
+// Debounce timeout
+int debounceTimeout = 20;
+// Auto mode interval
+int autoModeInterval = 200;
 
 enum LEDColor {
   OFF = 0b000,
@@ -29,13 +32,15 @@ enum LEDColor {
 
 enum LEDColor colors[] = {OFF, GREEN, BLUE, CYAN, RED, YELLOW, MAGENTA, WHITE};
 
+int modulo(int x, int N) {
+  return (x % N + N) % N;
+} // Helper function to get the modulo of a number
+
 int counter = 0;
 bool increment = true;
 bool autoMode = false;
 
-int modulo(int x, int N) { return (x % N + N) % N; }
-
-void ment() {
+void ment() { // Helper function to increment or decrement the counter
   if (increment) {
     counter++;
   } else {
@@ -44,23 +49,80 @@ void ment() {
   counter = modulo(counter, 8);
 }
 
-void setupPortF() {
-  int dummy;
+void setLEDColor(enum LEDColor color) {
+  GPIO_PORTF_DATA_R = color << 1;
+} // Helper function to set the color of the LED
 
-  // Enable the GPIO port that is used for the on-board LEDs and switches.
-  SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
+volatile int ticks = 0; // Volatile because it is changed in an ISR
+void SysTick_Handler(void) {
+  // Hardware clears systick int reguest
+  ticks++; // Increment ticks every 1ms
 
-  // Do a dummy read to insert a few cycles after enabling the peripheral.
-  dummy = SYSCTL_RCGC2_R;
+  // Handle auto mode
+  if (autoMode) {
+    if (ticks % autoModeInterval == 0) // If 0.2 second has passed
+      ment();                          // Increment or decrement counter
+  }
+}
 
-  // Set the direction as output (PF1 - PF3).
-  GPIO_PORTF_DIR_R = 0x0E;
+void setupPortF();   // Function declaration
+void init_systick(); // Function declaration
 
-  // Enable the GPIO pins for digital function (PF1 - PF4)
-  GPIO_PORTF_DEN_R = 0x1E;
+int main(void) {
+  setupPortF();
+  init_systick();
 
-  // Enable internal pull-up (PF4).
-  GPIO_PORTF_PUR_R = 0x10;
+  // Loop forever.
+  while (1) {
+    if (~(GPIO_PORTF_DATA_R) & 0b00010000) { // If the button is pressed
+      ticks = 0;
+      while (~(GPIO_PORTF_DATA_R) & 0b00010000)
+        ;               // Wait for button release
+      int temp = ticks; // Store the current value of ticks
+      // First check for long press
+
+      if (ticks > longPressTimeout) {
+        // If the button is pressed for more than 2 seconds
+        autoMode = !autoMode; // Toggle auto mode
+        continue;             // Skip the rest of the main loop
+      }
+
+      // Then check for single or double click
+      if (ticks > debounceTimeout) {
+        // Handle debouncing
+
+        // If auto mode is enabled, disable it
+        if (autoMode) {
+          autoMode = false;
+          continue; // Skip the rest of the main loop
+        }
+
+        // Check for another click within the double click timeout
+        bool doubleClick = false;
+        temp = ticks; // Store the current value of ticks
+        while ((ticks - temp) < doubleClickTimeout) {
+          if (~(GPIO_PORTF_DATA_R) & 0b00010000 &&
+              (ticks - temp) > debounceTimeout) {
+            while (~(GPIO_PORTF_DATA_R) & 0b00010000)
+              ;                     // Wait for button release
+            increment = !increment; // Toggle increment
+            doubleClick = true;
+            break;
+          }
+        }
+
+        // If it is not a double click, then it was a single click
+        if (!doubleClick) {
+          ment(); // Increment or decrement counter on single click
+        }
+      }
+    } else {
+      // If the button is not pressed
+      // Set the color of the LED
+      setLEDColor(colors[counter]);
+    }
+  }
+  return (0);
 }
 
 void init_systick() {
@@ -92,40 +154,21 @@ void init_systick() {
   NVIC_ST_CTRL_R |= NVIC_ST_CTRL_ENABLE;
 }
 
-void setLEDColor(enum LEDColor color) { GPIO_PORTF_DATA_R = color << 1; }
+void setupPortF() {
+  int dummy;
 
-int main(void) {
-  setupPortF();
-  init_systick();
+  // Enable the GPIO port that is used for the on-board LEDs and switches.
+  SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
 
-  // Loop forever.
-  while (1) {
-    if (~(GPIO_PORTF_DATA_R) & 0x10) {
-      ticks = 0;
-      while (~(GPIO_PORTF_DATA_R) & 0b00010000)
-        ;                 // Wait for button release
-      int temp = ticks;   // Store the current value of ticks
-      if (ticks > 2000) { // If the button is pressed for more than 2 seconds
-        autoMode = !autoMode;
-      }
-      // if (increment) {
-      //   increment = false;
-      // } else {
-      //   increment = true;
-      // }
-    } else if (ticks > 5) { // If the button is pressed for more than 5ms to
-                            // remove debounce
-      if (autoMode) {
-        autoMode = false; // Disable auto mode
-      }
-      ment(); // Increment or decrement counter
-    } else if (autoMode) {
-      ticks = 0;
-      while (ticks < 200)
-        ;     // Wait for 200ms
-      ment(); // Increment or decrement counter
-    }
-    setLEDColor(colors[counter]); // Set the LED color
-  }
-  return (0);
+  // Do a dummy read to insert a few cycles after enabling the peripheral.
+  dummy = SYSCTL_RCGC2_R;
+
+  // Set the direction as output (PF1 - PF3).
+  GPIO_PORTF_DIR_R = 0x0E;
+
+  // Enable the GPIO pins for digital function (PF1 - PF4)
+  GPIO_PORTF_DEN_R = 0x1E;
+
+  // Enable internal pull-up (PF4).
+  GPIO_PORTF_PUR_R = 0x10;
 }
