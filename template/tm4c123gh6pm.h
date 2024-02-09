@@ -73,8 +73,7 @@
 #define INT_COMP0               41          // Analog Comparator 0
 #define INT_COMP1               42          // Analog Comparator 1
 #define INT_SYSCTL              44          // System Control
-#define INT_FLASH               45          // Flash Memory Control and EEPROM
-                                            // Control
+#define INT_FLASH               45          // Flash Memory Control and EEPROM Control
 #define INT_GPIOF               46          // GPIO Port F
 #define INT_UART2               49          // UART2
 #define INT_SSI1                50          // SSI1

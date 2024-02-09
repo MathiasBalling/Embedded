@@ -101,10 +101,12 @@ int main(void) {
         bool doubleClick = false;
         temp = ticks; // Store the current value of ticks
         while ((ticks - temp) < doubleClickTimeout) {
+          // Check if the button is pressed again after the debounce timeout
           if (~(GPIO_PORTF_DATA_R) & 0b00010000 &&
               (ticks - temp) > debounceTimeout) {
+            // Wait for button release
             while (~(GPIO_PORTF_DATA_R) & 0b00010000)
-              ;                     // Wait for button release
+              ;
             increment = !increment; // Toggle increment
             doubleClick = true;
             break;
