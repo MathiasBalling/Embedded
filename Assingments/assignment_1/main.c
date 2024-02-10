@@ -53,15 +53,15 @@ void setLEDColor(enum LEDColor color) {
   GPIO_PORTF_DATA_R = color << 1;
 } // Helper function to set the color of the LED
 
-volatile int ticks = 0; // Volatile because it is changed in an ISR
+volatile int ticksMS = 0; // Volatile because it is changed in an ISR
 void SysTick_Handler(void) {
   // Hardware clears systick int reguest
-  ticks++; // Increment ticks every 1ms
+  ticksMS++; // Increment ticksMS every 1ms
 
   // Handle auto mode
   if (autoMode) {
-    if (ticks % autoModeInterval == 0) // If 0.2 second has passed
-      ment();                          // Increment or decrement counter
+    if (ticksMS % autoModeInterval == 0) // If 0.2 second has passed
+      ment();                            // Increment or decrement counter
   }
 }
 
@@ -75,20 +75,20 @@ int main(void) {
   // Loop forever.
   while (1) {
     if (~(GPIO_PORTF_DATA_R) & 0b00010000) { // If the button is pressed
-      ticks = 0;
+      ticksMS = 0;
       while (~(GPIO_PORTF_DATA_R) & 0b00010000)
-        ;               // Wait for button release
-      int temp = ticks; // Store the current value of ticks
-      // First check for long press
+        ;                      // Wait for button release
+      int pressedMS = ticksMS; // Store the time the button was pressed
 
-      if (ticks > longPressTimeout) {
+      // First check for long press
+      if (pressedMS > longPressTimeout) {
         // If the button is pressed for more than 2 seconds
         autoMode = !autoMode; // Toggle auto mode
         continue;             // Skip the rest of the main loop
       }
 
       // Then check for single or double click
-      if (ticks > debounceTimeout) {
+      if (pressedMS > debounceTimeout) {
         // Handle debouncing
 
         // If auto mode is enabled, disable it
@@ -99,11 +99,10 @@ int main(void) {
 
         // Check for another click within the double click timeout
         bool doubleClick = false;
-        temp = ticks; // Store the current value of ticks
-        while ((ticks - temp) < doubleClickTimeout) {
+        ticksMS = 0; // Reset ticksMS
+        while (ticksMS < doubleClickTimeout) {
           // Check if the button is pressed again after the debounce timeout
-          if (~(GPIO_PORTF_DATA_R) & 0b00010000 &&
-              (ticks - temp) > debounceTimeout) {
+          if (~(GPIO_PORTF_DATA_R) & 0b00010000 && ticksMS > debounceTimeout) {
             // Wait for button release
             while (~(GPIO_PORTF_DATA_R) & 0b00010000)
               ;

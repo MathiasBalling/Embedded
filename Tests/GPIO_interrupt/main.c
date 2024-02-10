@@ -14,7 +14,9 @@ enum LEDColor {
 
 enum LEDColor colors[] = {OFF, GREEN, BLUE, CYAN, RED, YELLOW, MAGENTA, WHITE};
 
-void setLEDColor(enum LEDColor color) { GPIO_PORTF_DATA_R = color << 1; }
+void setLEDColor(enum LEDColor color) {
+  GPIO_PORTF_DATA_R = (GPIO_PORTF_DATA_R & 0b11110001) | (color << 1);
+}
 
 void setupPortF() {
   // Enable the GPIO port that is used for the on-board LEDs and switches.
@@ -26,21 +28,24 @@ void setupPortF() {
   // Enable internal pull-up (PF4).
   GPIO_PORTF_PUR_R = 0b00010000;
 
-  // Set the interrupt type for PF4 (SW1)
-  NVIC_EN1_R |= (1 << 14); // enable interrupt in NVIC
-  // FIX: Add a priority for the interrupt
-  NVIC_PRI7_R = (NVIC_PRI7_R & 0xFF00FFFF) | 0x00A00000; // priority 5
-  // NVIC_PEND1_R |= (1 << 14);      // enable interrupt in NVIC
-  GPIO_PORTF_IS_R |= 0b00010000;  // PF4 is edge-sensitive
-  GPIO_PORTF_IBE_R |= 0b00010000; // PF4 is both edges
-  // GPIO_PORTF_IEV_R |= 0b00010000; // PF4 falling edge event
-  GPIO_PORTF_IM_R = 0b00010000;  // Interrupt on PF4
-  GPIO_PORTF_ICR_R = 0b00010000; // clear flag4
+  // Set the interrupt type for GPIOF PF4 (SW1)
+  GPIO_PORTF_IS_R &= ~(0b00010000);  // PF4 is edge-sensitive
+  GPIO_PORTF_IBE_R &= ~(0b00010000); // PF4 not both edges
+  GPIO_PORTF_IEV_R = 0b00010000;     // PF4 rising edge
+  GPIO_PORTF_IM_R = 0b00010000;      // Interrupt on PF4
+  GPIO_PORTF_ICR_R = 0b00010000;     // clear flag4
+
+  // Enable interrupt for GPIO Port F (INT30)
+  NVIC_EN0_R |= (1 << 30); // Enable interrupt 30 in NVIC
+  // Set priority to 5 (0-7)
+  NVIC_PRI7_R = (NVIC_PRI7_R & 0xFF00FFFF) | (0b101 << 21);
 }
+
+volatile int count = 1; // Volatile to prevent optimization
 
 // Interrupt handler for GPIO Port F
 void PortF_Handler(void) {
-  setLEDColor(BLUE);
+  count = (count + 1) % 8;
   GPIO_PORTF_ICR_R = 0b00010000; // clear interrupt flag for PF4
 } // GPIO Port F
 
@@ -49,7 +54,7 @@ int main(void) {
 
   // Loop forever.
   while (1) {
+    setLEDColor(colors[count]);
   }
-
   return (0);
 }
