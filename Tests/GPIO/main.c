@@ -18,7 +18,7 @@ void setLEDColor(enum LEDColor color) { GPIO_PORTF_DATA_R = color << 1; }
 
 int main(void) {
   // Enable the GPIO port that is used for the on-board LEDs and switches.
-  SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
+  SYSCTL_RCGCGPIO_R = SYSCTL_RCGCGPIO_R5;
 
   // Unlock the GPIO commit control register.
   GPIO_PORTF_LOCK_R = 0x4C4F434B;
@@ -42,7 +42,7 @@ int main(void) {
     else if ((GPIO_PORTF_DATA_R & 0x01) == 0) // SW2 is pressed
       setLEDColor(BLUE);
     else // Neither switch is pressed
-      setLEDColor(RED);
+      setLEDColor(OFF);
   }
 
   return (0);

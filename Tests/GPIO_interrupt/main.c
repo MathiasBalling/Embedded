@@ -36,7 +36,7 @@ void setupPortF() {
   GPIO_PORTF_ICR_R = 0b00010000;     // clear flag4
 
   // Enable interrupt for GPIO Port F (INT30)
-  NVIC_EN0_R |= (1 << 30); // Enable interrupt 30 in NVIC
+  NVIC_EN0_R |= (1 << (INT_GPIOF - 16)); // Enable interrupt 30 in NVIC
   // Set priority to 5 (0-7)
   NVIC_PRI7_R = (NVIC_PRI7_R & 0xFF00FFFF) | (0b101 << 21);
 }
