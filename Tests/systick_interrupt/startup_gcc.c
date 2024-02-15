@@ -33,8 +33,8 @@ static unsigned long pulStack[64];
 // External declarations for the interrupt handlers used by the application.
 //
 //*****************************************************************************
-extern void SysTick_Handler(void);
-extern void PortF_Handler(void);
+extern void systick_handler(void);
+extern void portf_handler(void);
 
 //*****************************************************************************
 //
@@ -59,7 +59,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler, // Debug monitor handler
     0,                 // Reserved
     IntDefaultHandler, // The PendSV handler
-    SysTick_Handler,   // The SysTick handler
+    systick_handler,   // The SysTick handler
     IntDefaultHandler, // GPIO Port A
     IntDefaultHandler, // GPIO Port B
     IntDefaultHandler, // GPIO Port C
@@ -90,7 +90,7 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     IntDefaultHandler, // Analog Comparator 2
     IntDefaultHandler, // System Control (PLL, OSC, BO)
     IntDefaultHandler, // FLASH Control
-    PortF_Handler,     // GPIO Port F
+    portf_handler,     // GPIO Port F
     IntDefaultHandler, // GPIO Port G
     IntDefaultHandler, // GPIO Port H
     IntDefaultHandler, // UART2 Rx and Tx
@@ -300,11 +300,11 @@ static void IntDefaultHandler(void) {
 }
 
 /******************************User Interrupts********************************/
-__attribute__((weak)) void SysTick_Handler(void) {
+__attribute__((weak)) void systick_handler(void) {
   while (1) {
   }
 }
-__attribute__((weak)) void PortF_Handler(void) {
+__attribute__((weak)) void portf_handler(void) {
   while (1) {
   }
 }

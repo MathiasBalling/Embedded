@@ -11,7 +11,7 @@
 
 volatile int ticks = 0;
 
-void SysTick_Handler(void)
+void systick_handler(void)
 /*****************************************************************************
  *   Function : See module specification (.h-file).
  *****************************************************************************/

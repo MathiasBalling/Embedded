@@ -2,7 +2,6 @@
 #include "tm4c123gh6pm.h"
 #include <stdint.h>
 
-
 #define TIM_1_SEC 200
 
 extern int ticks;

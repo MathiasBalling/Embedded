@@ -68,13 +68,12 @@ int main(void) {
   // Loop forever.
   while (1) {
     if ((GPIO_PORTF_DATA_R & 0b00010000) == 0) {
-      setLEDColor(BLUE);
       while (UART0_FR_R & (1 << 5))
         ;
       UART0_DR_R = 'H';
-
-    } else {
-      setLEDColor(RED);
+    }
+    if (UART0_FR_R & (1 << 6)) {
+      setLEDColor(BLUE);
     }
   }
   return (0);
