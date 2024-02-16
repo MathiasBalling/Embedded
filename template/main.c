@@ -1,6 +1,26 @@
+/***********************************************
+ * Univeristy of Southern Denmark
+ * Embedded Programming (EMP)
+ *
+ * MODULENAME: main.c
+ * PROJECT: template
+ * DESCRIPTION: Empty project template
+ * Change log:
+ ***********************************************
+ * Date of Change
+ * YYMMDD
+ * ----------------
+ * 160224 MB Module created.
+ **********************************************/
+
+/***************** Header *********************/
+/***************** Include files **************/
+#include "emp_type.h"
 #include "tm4c123gh6pm.h"
 #include <stdint.h>
-enum LEDColor {
+/***************** Defines ********************/
+/***************** Constants ******************/
+enum LED_Color {
   OFF = 0b000,
   GREEN = 0b100,
   BLUE = 0b010,
@@ -10,40 +30,53 @@ enum LEDColor {
   MAGENTA = 0b011,
   WHITE = 0b111
 };
+/***************** Variables ******************/
 
-enum LEDColor colors[] = {OFF, GREEN, BLUE, CYAN, RED, YELLOW, MAGENTA, WHITE};
+/***************** Functions ******************/
 
-void setLEDColor(enum LEDColor color) {
-  GPIO_PORTF_DATA_R = color << 1;
-} // Helper function to set the color of the LED
+void set_led_color(enum LED_Color color);
+/***********************************************
+ * Input: enum LED_Color color
+ * Output: void
+ * Function: Helper function to set the color of the LED
+ **********************************************/
+
+void setup_peripherals(void);
+/***********************************************
+ * Input: void
+ * Output: void
+ * Function: Helper function to setup the peripherals
+ **********************************************/
+
+/***************** End of module **************/
 
 int main(void) {
-  int dummy;
-
-  // Enable the GPIO port that is used for the on-board LEDs and switches.
-  SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOF;
-
-  // Do a dummy read to insert a few cycles after enabling the peripheral.
-  dummy = SYSCTL_RCGC2_R;
-
-  // Set the direction as output (PF1 - PF3).
-  GPIO_PORTF_DIR_R = 0x0E;
-
-  // Enable the GPIO pins for digital function (PF1 - PF4)
-  GPIO_PORTF_DEN_R = 0x1E;
-
-  // Enable internal pull-up (PF4).
-  GPIO_PORTF_PUR_R = 0x10;
 
   // Loop forever.
   while (1) {
-    if ((GPIO_PORTF_DATA_R & 0x10) == 0) {
-      // If the button is pressed
-      setLEDColor(BLUE);
+    if ((GPIO_PORTF_DATA_R & (1 << 4)) == 0) {
+      // If the button sw1 is pressed
+      set_led_color(BLUE);
     } else {
       // If the button is not pressed
-      setLEDColor(OFF);
+      set_led_color(OFF);
     }
   }
   return (0);
+}
+
+void set_led_color(enum LED_Color color) { GPIO_PORTF_DATA_R = color << 1; }
+
+void setup_peripherals(void) {
+  // Enable the GPIO port that is used for the on-board LEDs and switches.
+  SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R5;
+
+  // Set the direction as output (PF1 - PF3).
+  GPIO_PORTF_DIR_R |= 0b00001110;
+
+  // Enable the GPIO pins for digital function (PF1 - PF4)
+  GPIO_PORTF_DEN_R |= 0b00011110;
+
+  // Enable internal pull-up (PF4).
+  GPIO_PORTF_PUR_R |= (1 << 4);
 }
