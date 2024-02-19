@@ -40,6 +40,8 @@
 #ifndef __TM4C123GH6PM_H__
 #define __TM4C123GH6PM_H__
 
+#include <stdint.h>
+
 //*****************************************************************************
 //
 // Interrupt assignments
@@ -72,6 +74,7 @@
 #define INT_TIMER2B             40          // 16/32-Bit Timer 2B
 #define INT_COMP0               41          // Analog Comparator 0
 #define INT_COMP1               42          // Analog Comparator 1
+#define INT_COMP2               42          // Analog Comparator 2
 #define INT_SYSCTL              44          // System Control
 #define INT_FLASH               45          // Flash Memory Control and EEPROM Control
 #define INT_GPIOF               46          // GPIO Port F

@@ -17,7 +17,6 @@
 /***************** Include files **************/
 #include "emp_type.h"
 #include "tm4c123gh6pm.h"
-#include <stdint.h>
 /***************** Defines ********************/
 /***************** Constants ******************/
 enum LED_Color {
