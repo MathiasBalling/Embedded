@@ -73,6 +73,7 @@ void handle_event(enum Event event) {
     state = NORMAL;
     break;
   }
+  // Reset the ticks to apply the new state instantly
   ticks = 0;
 }
 void process_press() {
@@ -112,6 +113,7 @@ void norwegian_lights() {
   if (!ticks) {
     GPIO_PORTF_DATA_R |= 0b00001010;
     ticks = NORWEGIAN_LIGHT_DURATION;
+    // Toggle the yellow light
     GPIO_PORTF_DATA_R ^= 0b00000100;
   }
 }
@@ -176,9 +178,9 @@ void SysTick_handler(void) {
 int main(void) {
   setup_GPIOF();
   setup_systick();
+
   // Loop forever.
   while (1) {
-    // continue;
     switch (state) {
     case NORMAL:
       normal_lights();
@@ -188,10 +190,8 @@ int main(void) {
       break;
     case EMERGENCY:
       GPIO_PORTF_DATA_R |= 0b00001100;
-      // Toggle the YELLOW light on emp board
+      // Constant red light
       GPIO_PORTF_DATA_R &= ~0b00000010;
-      break;
-    default:
       break;
     }
   }
