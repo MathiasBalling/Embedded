@@ -2,7 +2,7 @@
  * Univeristy of Southern Denmark
  * Embedded Programming (EMP)
  *
- * MODULENAME: module.c
+ * MODULENAME: lcd.c
  * PROJECT: template c-file
  * DESCRIPTION: Empty module template
  * Change log:
@@ -51,13 +51,13 @@ void lcd_send_cmd(INT8U cmd) {
   lcd_print_data(cmd);
   GPIO_PORTD_DATA_R &= ~(1 << LCD_RS); // Write data to LCD screen
   GPIO_PORTD_DATA_R |= (1 << LCD_E);   // Enable LCD clock
-  delay(10000);
+  delay(7000);
   GPIO_PORTD_DATA_R &= ~(1 << LCD_E); // Disable LCD clock
 
   lcd_print_data(cmd << 4);
   GPIO_PORTD_DATA_R &= ~(1 << LCD_RS); // Write data to LCD screen
   GPIO_PORTD_DATA_R |= (1 << LCD_E);   // Enable LCD clock
-  delay(10000);
+  delay(7000);
   GPIO_PORTD_DATA_R &= ~(1 << LCD_E); // Disable LCD clock
 }
 
@@ -65,13 +65,13 @@ void lcd_send_data(INT8U data) {
   lcd_print_data(data);
   GPIO_PORTD_DATA_R |= (1 << LCD_RS); // Write data to LCD screen
   GPIO_PORTD_DATA_R |= (1 << LCD_E);  // Enable LCD clock
-  delay(10000);
+  delay(7000);
   GPIO_PORTD_DATA_R &= ~(1 << LCD_E); // Disable LCD clock
 
   lcd_print_data(data << 4);
   GPIO_PORTD_DATA_R |= (1 << LCD_RS); // Write data to LCD screen
   GPIO_PORTD_DATA_R |= (1 << LCD_E);  // Enable LCD clock
-  delay(10000);
+  delay(7000);
   GPIO_PORTD_DATA_R &= ~(1 << LCD_E); // Disable LCD clock
 }
 

@@ -45,17 +45,18 @@ int main(void) {
   setup_peripherals();
   lcd_init();
 
-  // lcd_send_cmd(0x80);
-  // lcd_send_string("Mathias", 7);
-  // lcd_send_cmd(0xC0);
-  // lcd_send_string("Balling", 7);
   // Loop forever.
   while (1) {
 
     if ((GPIO_PORTF_DATA_R & (1 << 4)) == 0) {
       // If the button sw1 is pressed
-      lcd_send_cmd(0x80);// Set cursor to first line
-      lcd_send_string("Mathias", 7);
+      lcd_send_cmd(0x80); // Set cursor to first line
+      lcd_send_string("Mathias Balling", 15);
+      lcd_send_cmd(0xC0); // Set cursor to second line
+      lcd_send_string("SDU Robotics", 12);
+      while ((GPIO_PORTF_DATA_R & (1 << 4)) == 0) {
+        // Wait for the button to be released
+      }
     } else {
       // If the button is not pressed
       lcd_send_cmd(0x01); // Clear display

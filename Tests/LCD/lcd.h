@@ -4,7 +4,7 @@
  * Univeristy of Southern Denmark
  * Embedded Programming (EMP)
  *
- * MODULENAME: module.h
+ * MODULENAME: lcd.h
  * PROJECT: template h-file
  * DESCRIPTION: Empty header template
  * Change log:
