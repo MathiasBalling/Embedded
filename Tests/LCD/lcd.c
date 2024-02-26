@@ -36,7 +36,7 @@ void delay(volatile int time) {
   }
 }
 
-void lcd_init(void) {
+void setup_lcd(void) {
   lcd_send_cmd(0x28); // Set 4-bit mode
   lcd_send_cmd(0x06); // Auto increment cursor
   lcd_send_cmd(0x0C); // Display on, cursor off
