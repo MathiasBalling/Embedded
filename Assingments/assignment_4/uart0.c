@@ -23,8 +23,14 @@
 #include "events.h"
 #include "messages.h"
 #include "tm4c123gh6pm.h"
+#include "tmodel.h"
 
 /*****************************    Defines    *******************************/
+#define UA0S_IDLE 0
+#define UA0S_UPDATE_RTC_HOUR 1
+#define UA0S_UPDATE_RTC_MIN 2
+#define UA0S_UPDATE_RTC_SEC 3
+#define UA0S_SEND_RTC 4
 
 /*****************************   Constants   *******************************/
 
@@ -32,18 +38,61 @@
 
 /*****************************   Functions   *******************************/
 void uart0_task(INT8U task_no) {
-  if (uart0_rx_rdy()) {
-    INT8U ch = uart0_getc();
-    switch (ch) {
-    case '1':
-      break;
-    case '2':
-        uart0_string("Hello World\n");
-      break;
-    default:
-      break;
-        uart0_putc(ch);
+  INT8U sec, min, hour;
+  static INT8U uart0_state = UA0S_IDLE;
+  switch (uart0_state) {
+  case UA0S_IDLE:
+    if (uart0_rx_rdy()) {
+      INT8U ch = uart0_getc();
+      if (ch == '1') {
+        uart0_state = UA0S_UPDATE_RTC_HOUR;
+      } else if (ch == '2') {
+        uart0_state = UA0S_SEND_RTC;
+      }
     }
+    break;
+  case UA0S_SEND_RTC:
+    hour = get_msg_state(SSM_RTC_HOUR); // read the current value for seconds
+    uart0_putc(hour / 10 + '0');        // send the value to the terminal
+    uart0_putc(hour % 10 + '0');        // send the value to the terminal
+
+    min = get_msg_state(SSM_RTC_MIN); // read the current value for seconds
+    uart0_putc(min / 10 + '0');       // send the value to the terminal
+    uart0_putc(min % 10 + '0');       // send the value to the terminal
+
+    sec = get_msg_state(SSM_RTC_SEC); // read the current value for seconds
+    uart0_putc(sec / 10 + '0');       // send the value to the terminal
+    uart0_putc(sec % 10 + '0');       // send the value to the terminal
+
+    uart0_state = UA0S_IDLE;
+    break;
+  case UA0S_UPDATE_RTC_HOUR:
+    hour = (uart0_getc() - '0') * 10; // read the current value for seconds
+    hour += uart0_getc() - '0';       // read the current value for seconds
+    if (hour >= 0 && hour <= 23)
+      put_msg_state(SSM_RTC_HOUR, hour);
+
+    uart0_state = UA0S_UPDATE_RTC_MIN;
+    break;
+  case UA0S_UPDATE_RTC_MIN:
+    min = (uart0_getc() - '0') * 10; // read the current value for seconds
+    min += uart0_getc() - '0';       // read the current value for seconds
+    if (min >= 0 && min <= 59)
+      put_msg_state(SSM_RTC_MIN, min);
+
+    uart0_state = UA0S_UPDATE_RTC_SEC;
+    break;
+  case UA0S_UPDATE_RTC_SEC:
+    sec = (uart0_getc() - '0') * 10; // read the current value for seconds
+    sec += uart0_getc() - '0';       // read the current value for seconds
+    if (sec >= 0 && sec <= 59)
+      put_msg_state(SSM_RTC_SEC, sec);
+
+    uart0_state = UA0S_IDLE;
+    break;
+  default:
+    uart0_state = UA0S_IDLE;
+    break;
   }
 }
 
@@ -140,7 +189,7 @@ extern BOOLEAN uart0_rx_rdy()
  *   Function : See module specification (.h-file).
  *****************************************************************************/
 {
-  return (UART0_FR_R & UART_FR_RXFF);
+  return !(UART0_FR_R & UART_FR_RXFE);
 }
 
 extern INT8U uart0_getc()
@@ -156,7 +205,7 @@ extern BOOLEAN uart0_tx_rdy()
  *   Function : See module specification (.h-file).
  *****************************************************************************/
 {
-  return (UART0_FR_R & UART_FR_TXFE);
+  return !(UART0_FR_R & UART_FR_TXFF);
 }
 
 extern void uart0_putc(INT8U ch)
@@ -209,7 +258,7 @@ extern void uart0_init(INT32U baud_rate, INT8U databits, INT8U stopbits,
   UART0_LCRH_R += lcrh_stopbits(stopbits);
   UART0_LCRH_R += lcrh_parity(parity);
 
-  uart0_fifos_disable();
+  uart0_fifos_enable();
 
   UART0_CTL_R |= (UART_CTL_UARTEN | UART_CTL_TXE); // Enable UART
 }

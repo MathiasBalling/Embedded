@@ -36,10 +36,6 @@
 #define BE_DOUBBLE_PUSH 2
 #define BE_LONG_PUSH 3
 
-// UART Events
-// ------------
-#define UE_RX_FULL 4
-
 // Timer Events
 // ------------
 #define TE_TIMEOUT 10
