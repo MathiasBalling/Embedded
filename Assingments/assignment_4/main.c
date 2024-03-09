@@ -29,6 +29,8 @@ int main(void)
 
   signal(MUTEX_SYSTEM_RTC);
   signal(MUTEX_LCD_DISPLAY);
+  signal(MUTEX_UART0_RX);
+  signal(MUTEX_UART0_TX);
   signal(SEM_RTC_UPDATED);
 
   // Loop forever.

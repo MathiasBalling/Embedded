@@ -20,8 +20,8 @@
 /***************************** Include files *******************************/
 #include "uart0.h"
 #include "emp_type.h"
-#include "events.h"
 #include "messages.h"
+#include "sem.h"
 #include "tm4c123gh6pm.h"
 #include "tmodel.h"
 
@@ -38,12 +38,17 @@
 
 /*****************************   Functions   *******************************/
 void uart0_task(INT8U task_no) {
-  INT8U sec, min, hour;
+  INT8U sec, min, hour, ch;
   static INT8U uart0_state = UA0S_IDLE;
+
   switch (uart0_state) {
   case UA0S_IDLE:
     if (uart0_rx_rdy()) {
-      INT8U ch = uart0_getc();
+      if (wait(MUTEX_UART0_RX)) {
+        ch = uart0_getc();
+      }
+      signal(MUTEX_UART0_RX);
+
       if (ch == '1') {
         uart0_state = UA0S_UPDATE_RTC_HOUR;
       } else if (ch == '2') {
@@ -52,41 +57,82 @@ void uart0_task(INT8U task_no) {
     }
     break;
   case UA0S_SEND_RTC:
-    hour = get_msg_state(SSM_RTC_HOUR); // read the current value for seconds
-    uart0_putc(hour / 10 + '0');        // send the value to the terminal
-    uart0_putc(hour % 10 + '0');        // send the value to the terminal
+    if (wait(MUTEX_SYSTEM_RTC)) // wait for the rtc mutex
+    {
+      hour = get_msg_state(SSM_RTC_HOUR); // read the current value for hour
+      min = get_msg_state(SSM_RTC_MIN);   // read the current value for minutes
+      sec = get_msg_state(SSM_RTC_SEC);   // read the current value for seconds
 
-    min = get_msg_state(SSM_RTC_MIN); // read the current value for seconds
-    uart0_putc(min / 10 + '0');       // send the value to the terminal
-    uart0_putc(min % 10 + '0');       // send the value to the terminal
+      signal(MUTEX_SYSTEM_RTC); // release the rtc mutex
+    }
 
-    sec = get_msg_state(SSM_RTC_SEC); // read the current value for seconds
-    uart0_putc(sec / 10 + '0');       // send the value to the terminal
-    uart0_putc(sec % 10 + '0');       // send the value to the terminal
+    if (wait(MUTEX_UART0_TX)) {
+      uart0_putc(hour / 10 + '0'); // send the value
+      uart0_putc(hour % 10 + '0'); // send the value
+      uart0_putc(min / 10 + '0');  // send the value
+      uart0_putc(min % 10 + '0');  // send the value
+      uart0_putc(sec / 10 + '0');  // send the value
+      uart0_putc(sec % 10 + '0');  // send the value
+
+      signal(MUTEX_UART0_TX); // release the uart0 tx mutex
+    }
 
     uart0_state = UA0S_IDLE;
     break;
   case UA0S_UPDATE_RTC_HOUR:
-    hour = (uart0_getc() - '0') * 10; // read the current value for seconds
-    hour += uart0_getc() - '0';       // read the current value for seconds
-    if (hour >= 0 && hour <= 23)
-      put_msg_state(SSM_RTC_HOUR, hour);
+    if (wait(MUTEX_UART0_RX)) {
+      hour = (uart0_getc() - '0') * 10; // read the received value for hour
+      hour += uart0_getc() - '0';       // read the received value for hour
+
+      signal(MUTEX_UART0_RX); // release the uart0 rx mutex
+    }
+
+    if (hour >= 0 && hour <= 23) {
+      if (wait(MUTEX_SYSTEM_RTC)) // wait for the rtc mutex
+      {
+        put_msg_state(SSM_RTC_HOUR, hour);
+
+        signal(MUTEX_SYSTEM_RTC); // release the rtc mutex
+      }
+    }
 
     uart0_state = UA0S_UPDATE_RTC_MIN;
     break;
   case UA0S_UPDATE_RTC_MIN:
-    min = (uart0_getc() - '0') * 10; // read the current value for seconds
-    min += uart0_getc() - '0';       // read the current value for seconds
-    if (min >= 0 && min <= 59)
-      put_msg_state(SSM_RTC_MIN, min);
+    if (wait(MUTEX_UART0_RX)) {
+      min = (uart0_getc() - '0') * 10; // read the received value for minutes
+      min += uart0_getc() - '0';       // read the received value for minutes
+
+      signal(MUTEX_UART0_RX); // release the uart0 rx mutex
+    }
+
+    if (min >= 0 && min <= 59) {
+      if (wait(MUTEX_SYSTEM_RTC)) // wait for the rtc mutex
+      {
+        put_msg_state(SSM_RTC_MIN, min);
+
+        signal(MUTEX_SYSTEM_RTC); // release the rtc mutex
+      }
+    }
 
     uart0_state = UA0S_UPDATE_RTC_SEC;
     break;
   case UA0S_UPDATE_RTC_SEC:
-    sec = (uart0_getc() - '0') * 10; // read the current value for seconds
-    sec += uart0_getc() - '0';       // read the current value for seconds
-    if (sec >= 0 && sec <= 59)
-      put_msg_state(SSM_RTC_SEC, sec);
+    if (wait(MUTEX_UART0_RX)) {
+      sec = (uart0_getc() - '0') * 10; // read the received value for seconds
+      sec += uart0_getc() - '0';       // read the received value for seconds
+
+      signal(MUTEX_UART0_RX); // release the uart0 rx mutex
+    }
+
+    if (sec >= 0 && sec <= 59) {
+      if (wait(MUTEX_SYSTEM_RTC)) // wait for the rtc mutex
+      {
+        put_msg_state(SSM_RTC_SEC, sec);
+
+        signal(MUTEX_SYSTEM_RTC); // release the rtc mutex
+      }
+    }
 
     uart0_state = UA0S_IDLE;
     break;

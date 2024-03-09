@@ -144,8 +144,8 @@ void adjust_rtc_task(INT8U task_no) {
         {
           min =
               get_msg_state(SSM_RTC_MIN); // read the current value for minutes
-          move_LCD(0, 0);                 // move the cursor
           wr_ch_LCD(0xFF);                // clear the display
+          move_LCD(0, 0);                 // move the cursor
           wr_str_LCD("Min: ");            // write the string "Min: "
           wr_ch_LCD(
               (INT8U)(min / 10 + '0')); // write the first digit of the minutes
