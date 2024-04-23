@@ -26,16 +26,22 @@ CFLAGS := -mthumb \
 LDFLAGS := -T ./tm4c123/tm4c123.ld --entry ResetISR --gc-sections
 OBJCOPYFLAGS := -O binary
 
+# If there is no stdlib in the project for FreeRTOS
 # Get the location of libgcc.a from the GCC front-end.
 LIBGCC:=${shell ${CC} ${CFLAGS} -print-libgcc-file-name}
 # Get the location of libc.a from the GCC front-end.
 LIBC:=${shell ${CC} ${CFLAGS} -print-file-name=libc.a}
 # Get the location of libm.a from the GCC front-end.
 LIBM:=${shell ${CC} ${CFLAGS} -print-file-name=libm.a}
+# Use stdlibs or costum memory management
+USE_STDLIB := 0
+ifeq ($(USE_STDLIB),1)
+	STDLIBS := '${LIBGCC}' '${LIBC}' '${LIBM}'
+else
+	STDLIBS :=
+endif
 
-STDLIBS := '${LIBGCC}' '${LIBC}' '${LIBM}'
-
-MEMORY := ./freeRTOS/portable/MemMang/heap_2.c
+MEMORY := ./freeRTOS/portable/MemMang/heap_4.c
 PORT := ./freeRTOS/portable/GCC/ARM_CM4F/port.c
 
 SOURCES := $(wildcard ./src/*.c) $(wildcard ./tm4c123/*.c) $(wildcard ./freeRTOS/*.c) $(PORT) $(MEMORY)
@@ -48,10 +54,6 @@ INCLUDES := -I./freeRTOS/include/ \
 		-I./tm4c123/
 
 all: main
-
-test:
-	# Echo the value of STDLIBS
-	echo ${STDLIBS}
 
 flash: all
 	lm4flash build/main.bin

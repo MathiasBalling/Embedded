@@ -9,9 +9,9 @@
 #define LOW_PRIO  1
 #define MED_PRIO  2
 #define HIGH_PRIO 3
+
 void status_led_task(void *pvParameters)
 {
-	
   SYSCTL_RCGCGPIO_R = SYSCTL_RCGCGPIO_R5;
   while (!(SYSCTL_PRGPIO_R & SYSCTL_PRGPIO_R5)) {}
   GPIO_PORTF_DIR_R = 0x02;

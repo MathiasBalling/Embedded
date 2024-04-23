@@ -1,4 +1,0 @@
--I./freeRTOS/include/
--I./freeRTOS/portable/GCC/ARM_CM4F/
--I./src/inc/
--I./tm4c123/
